@@ -1,44 +1,59 @@
-/* eslint-disable prettier/prettier */
-import { Controller, Param, Post, UploadedFile, UseInterceptors } from '@nestjs/common';
-import { ApiBadRequestResponse, ApiBody, ApiConsumes, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { EndpointTesterService } from './endpoint-tester.service';
-import { FileUploadtDto } from './dto/endpoint-tester.dto';
+import {
+  Controller,
+  Post,
+  UseInterceptors,
+  UploadedFile,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
+  Body,
+} from '@nestjs/common';
+import {
+  ApiConsumes,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileUploadtDto } from './dto/endpoint-tester.dto';
+import { diskStorage } from 'multer';
 
-@ApiTags('Endpoint Tester')
-@Controller('endpoint-tester')
+@ApiTags('files')
+@Controller('files')
 export class EndpointTesterController {
-  constructor(private endpointTesterService: EndpointTesterService){}
-
-
-  @Post()
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiOperation({ summary: "List all possible e2e scenarios for a given endpoint" })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Upload a YAML file',
-    type: 'multipart/form-data',
-    required: true,
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-    },
+  @Post('upload')
+  @ApiOperation({ summary: 'Upload a file' })
+  @ApiResponse({
+    status: 201,
+    description: 'The file has been successfully uploaded.',
   })
-  @ApiBadRequestResponse({ description: "Invalid data provided." })
-  @ApiOkResponse({ description: 'OK', type: String, isArray: true })
-  generateScenarios(
-    @Param() params: FileUploadtDto,
-    @UploadedFile() file: Express.Multer.File
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const fileName = `${Date.now()}-${file.originalname}`;
+          cb(null, fileName);
+        },
+      }),
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadFile(
+    @Body() body: FileUploadtDto,
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [new FileTypeValidator({ fileType: '(yml|yaml)' })]
+      }),
+    )
+    file: Express.Multer.File,
   ) {
-    if (file.mimetype !== 'application/x-yaml' && file.mimetype !== 'text/yaml') {
-      throw new Error('Only .yml files are allowed');
-    }
-    console.log(file);
+    return {
+      message: 'File uploaded successfully!',
+      file: file,
+      body: body,
+    };
   }
-  
 }

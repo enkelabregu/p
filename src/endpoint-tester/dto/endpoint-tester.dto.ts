@@ -8,24 +8,20 @@ enum HTTPMethod {
   DELETE = 'DELETE'
 }
 export class FileUploadtDto {
-
-  @ApiProperty({
-    description: 'Paste your swagger documentation',
-    required: true,
-  })
-  documentation: string;
+  @ApiProperty({description:'Swagger documentation file.',  type: 'string', format: 'binary' })
+  file: any;
 
   @ApiProperty({
     description:
-      'Endpoint you want to test, same as it is specified on swagger file',
+      'Endpoint you want to test, same as it is specified on swagger file.',
     required: true,
   })
   endpoint: string;
 
   @ApiProperty({
-    description: 'HTTP method of the endpoint you want to test',
+    description: 'HTTP method of the endpoint you want to test.',
     enum: HTTPMethod,
     required: true,
   })
-  method: HTTPMethod;
+  method: HTTPMethod; 
 }
