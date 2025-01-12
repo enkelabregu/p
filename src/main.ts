@@ -2,11 +2,13 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import {DocumentBuilder, SwaggerModule}  from '@nestjs/swagger';
-import * as bodyParser from 'body-parser';
+import { ValidationPipe } from '@nestjs/common';
+
 
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(new ValidationPipe());
   const config = new DocumentBuilder()
       .setTitle('TestLab')
       .setDescription('This project is dedicated to list all possible test scenarios for a given swagger documentation and a given endpoint.')
@@ -15,8 +17,6 @@ async function bootstrap() {
 
       const document = SwaggerModule.createDocument(app, config)
       SwaggerModule.setup('api', app, document);
-
-      app.use(bodyParser.text({ limit: '10mb' }));
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
